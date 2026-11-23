@@ -1,0 +1,46 @@
+# Render Blueprint – AVTBVS Membership API (free demo tier).
+# Render dashboard → New → Blueprint → pick this repo. Values marked
+# `sync: false` are asked for once in the dashboard and never stored in git.
+#
+# Free-tier limits: the service sleeps after 15 min without traffic (first
+# request then takes ~1 min) and the filesystem is ephemeral, so uploaded
+# photos/documents are lost on every restart or redeploy. Demo use only.
+services:
+  - type: web
+    name: avtbvs-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./deployment/docker/backend.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Demo mode: e-mail/SMS are not delivered and the fixed code 123456
+      # verifies e-mail and mobile. Switch to "production" only after a real
+      # SMTP and SMS provider are configured.
+      - key: ENVIRONMENT
+        value: development
+      - key: PORT
+        value: "8000"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: SMS_PROVIDER
+        value: console
+      # Secrets – entered in the Render dashboard (see your credentials file).
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+      - key: DATA_HASH_KEY
+        sync: false
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
