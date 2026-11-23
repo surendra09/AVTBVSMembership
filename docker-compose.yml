@@ -1,0 +1,65 @@
+# AVTBVS Membership – production-style stack.
+#   cp .env.example .env   # then fill in real secrets
+#   docker compose up -d --build
+#   docker compose exec api python -m app.cli create-super-admin --name "..." --email ... --phone ...
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-avtbvs}
+      MYSQL_USER: ${MYSQL_USER:-avtbvs}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--default-time-zone=+00:00"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: { context: ., dockerfile: deployment/docker/backend.Dockerfile }
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-avtbvs}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-avtbvs}?charset=utf8mb4
+      PRIVATE_STORAGE_DIR: /data/private
+      CONSOLE_OUTBOX_FILE: /data/outbox.log
+      NOTIFICATION_WORKER_ENABLED: "false"   # the dedicated worker below delivers email/SMS
+    volumes:
+      - private_files:/data
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: { context: ., dockerfile: deployment/docker/backend.Dockerfile }
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER:-avtbvs}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE:-avtbvs}?charset=utf8mb4
+      PRIVATE_STORAGE_DIR: /data/private
+      CONSOLE_OUTBOX_FILE: /data/outbox.log
+    command: ["python", "-m", "app.workers.notifications"]
+    volumes:
+      - private_files:/data
+    depends_on:
+      api: { condition: service_started }
+
+  web:
+    build: { context: ., dockerfile: deployment/docker/frontend.Dockerfile }
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"   # put the HTTPS host proxy in front (deployment/nginx/https-host.conf.example)
+    depends_on: [api]
+
+volumes:
+  mysql_data:
+  private_files:   # photographs and identity documents – never served directly

@@ -1,0 +1,55 @@
+@import "@fontsource/tiro-telugu/400.css";
+@import "@fontsource/tiro-telugu/400-italic.css";
+@import "@fontsource/hind-guntur/400.css";
+@import "@fontsource/hind-guntur/500.css";
+@import "@fontsource/hind-guntur/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-ivory font-sans text-ink antialiased;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  h1, h2, h3 { @apply font-display text-forest; font-weight: 400; letter-spacing: -0.005em; }
+  h1 { font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem); line-height: 1.15; }
+  h2 { font-size: 1.5rem; line-height: 1.25; }
+  h3 { font-size: 1.15rem; line-height: 1.3; }
+  :focus-visible { outline: 2px solid #244C40; outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: #D8C9A5; color: #292D2A; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer components {
+  /* The paper register: ruled rows with a label cell, echoing the official form. */
+  .register { @apply border border-forest/30 bg-white; }
+  .register-row { @apply grid border-b border-forest/20 last:border-b-0 sm:grid-cols-[minmax(6.5rem,13rem)_minmax(0,1fr)]; }
+  .register-label { @apply bg-forest-50 px-3 pt-2 text-sm font-medium text-forest sm:border-r sm:border-forest/20 sm:py-2.5; }
+  .register-value { @apply min-w-0 px-3 pb-2.5 pt-1 text-ink sm:py-2.5; overflow-wrap: anywhere; }
+  .register-section { @apply border-b border-forest/30 bg-forest px-3 py-2 font-display text-base text-white; }
+
+  /* Membership number as a stamped register entry */
+  .reg-stamp {
+    @apply inline-flex flex-col border-2 border-double border-register px-4 py-1.5 text-register;
+    transform: rotate(-1.2deg);
+  }
+
+  .field-input {
+    @apply block w-full rounded border border-line bg-white px-3 py-2 text-[15px] text-ink placeholder:text-ink-muted/70
+      transition-colors focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15
+      disabled:cursor-not-allowed disabled:bg-sage/60 disabled:text-ink-soft;
+  }
+  .field-input[aria-invalid="true"] { @apply border-danger focus:ring-danger/15; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  @page { size: A4; margin: 14mm; }
+}
