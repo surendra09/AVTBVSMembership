@@ -24,7 +24,7 @@ class User(TimestampMixin, Base):
 
     id: Mapped[int] = pk()
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True)  # optional; login also works by mobile
     phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[Role] = mapped_column(_enum(Role), default=Role.USER, nullable=False, index=True)

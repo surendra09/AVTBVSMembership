@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api.routes import admin, applications, auth, members, notifications, public, super_admin
 from app.core.config import settings
@@ -94,3 +94,9 @@ async def unhandled(request: Request, exc: Exception):
 for module in (public, auth, applications, members, admin, super_admin, notifications):
     app.include_router(module.router, prefix=settings.API_PREFIX)
 app.include_router(members.files_router, prefix=settings.API_PREFIX)
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    """This server is the API only; send people who open it in a browser to the website."""
+    return RedirectResponse(settings.PUBLIC_APP_URL)

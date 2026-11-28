@@ -32,7 +32,7 @@ export default function AccountPage() {
         <Panel title="Account">
           <div className="register mb-5">
             <RegisterRows rows={[
-              { label: "Email address", value: <>{me.user.email} {me.user.email_verified ? <span className="text-sm text-ok">(verified)</span> : <span className="text-sm text-caution">(not verified)</span>}</> },
+              { label: "Email address", value: me.user.email ?? <span className="text-ink-muted">Not provided</span> },
               { label: "Mobile number", value: <>{me.user.phone} {me.user.phone_verified ? <span className="text-sm text-ok">(verified)</span> : <span className="text-sm text-caution">(not verified)</span>}</> },
               { label: "Access level", value: roleLabel },
               { label: "Last login", value: formatDateTime(me.user.last_login_at) },

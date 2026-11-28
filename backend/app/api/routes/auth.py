@@ -38,7 +38,6 @@ def register(body: RegisterIn, request: Request, response: Response, db: Session
     db.add(user)
     db.flush()
     notify(db, user, "account_registered", link="/dashboard")
-    svc.send_verification_otp(db, user, "email")
     svc.send_verification_otp(db, user, "phone")
     audit(db, user, "auth.register", "user", user.id, request=request)
     svc.issue_session(db, user, response, request)

@@ -210,7 +210,7 @@ class AdminApplicationOut(ApplicationOut):
     aadhaar_number: str | None = None
     applicant_user_id: int
     applicant_account_name: str
-    applicant_account_email: str
+    applicant_account_email: str | None
     applicant_account_phone: str
     reviewed_by_name: str | None = None
     introducer_check: IntroducerCheck

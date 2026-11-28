@@ -291,9 +291,9 @@ def link_account(member_id: int, body: LinkAccountIn, request: Request, admin: U
         raise svc.unprocessable("No account found", {"email": "No account is registered with this email"})
     if user.role != Role.USER:
         raise svc.unprocessable("Invalid account", {"email": "Administrator accounts cannot be linked to a membership"})
-    if not (user.email_verified_at and user.phone_verified_at):
+    if not user.phone_verified_at:
         raise svc.unprocessable("Account not verified",
-                                {"email": "The account holder must verify their email and mobile number first"})
+                                {"email": "The account holder must verify their mobile number first"})
     if db.scalar(select(MemberProfile.id).where(MemberProfile.user_id == user.id)):
         raise svc.unprocessable("Account already linked", {"email": "This account already has a membership"})
     open_app = db.scalar(select(MemberApplication).where(

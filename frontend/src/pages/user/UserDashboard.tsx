@@ -64,7 +64,7 @@ export default function UserDashboard() {
   const { me } = useAuth();
   if (!me) return null;
   const { user, membership: m } = me;
-  const verified = user.email_verified && user.phone_verified;
+  const verified = user.phone_verified;
   const firstName = user.full_name.split(" ")[0];
 
   return (
@@ -78,7 +78,6 @@ export default function UserDashboard() {
         <section aria-labelledby="verify-h" className="space-y-3">
           <h2 id="verify-h" className="text-lg">Confirm your contact details</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            {!user.email_verified && <VerifyContact channel="email" />}
             {!user.phone_verified && <VerifyContact channel="phone" />}
           </div>
         </section>

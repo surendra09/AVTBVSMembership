@@ -23,7 +23,7 @@ def _check_phone(v: str) -> str:
 
 class RegisterIn(BaseModel):
     full_name: str = Field(min_length=2, max_length=150)
-    email: EmailStr
+    email: EmailStr | None = Field(None, description="Optional. Needed only for e-mail notifications and password reset")
     phone: str = Field(description="Mobile number used for SMS/OTP")
     password: str
 
@@ -31,10 +31,12 @@ class RegisterIn(BaseModel):
     _pw = field_validator("password")(_check_password)
     _ph = field_validator("phone")(_check_phone)
 
-    @field_validator("email")
+    @field_validator("email", mode="before")
     @classmethod
-    def _lower(cls, v: str) -> str:
-        return v.lower()
+    def _lower(cls, v):
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v.strip().lower() if isinstance(v, str) else v
 
 
 class LoginIn(BaseModel):
@@ -84,7 +86,7 @@ class MembershipSummary(BaseModel):
 class UserOut(ORMModel):
     id: int
     full_name: str
-    email: str
+    email: str | None
     phone: str
     role: Role
     is_active: bool

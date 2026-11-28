@@ -131,11 +131,12 @@ def membership_summary(db: Session, user: User) -> MembershipSummary:
     )
 
 
-def user_exists(db: Session, email: str, phone: str) -> dict[str, str]:
+def user_exists(db: Session, email: str | None, phone: str) -> dict[str, str]:
     errors = {}
-    rows = db.execute(select(User.email, User.phone).where(or_(User.email == email, User.phone == phone))).all()
+    cond = or_(User.email == email, User.phone == phone) if email else User.phone == phone
+    rows = db.execute(select(User.email, User.phone).where(cond)).all()
     for e, p in rows:
-        if e == email:
+        if email and e == email:
             errors["email"] = "An account with this email already exists"
         if p == phone:
             errors["phone"] = "An account with this mobile number already exists"

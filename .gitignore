@@ -14,3 +14,4 @@ backups/
 .DS_Store
 *.db
 frontend/tsconfig.tsbuildinfo
+.claude/settings.local.json

@@ -88,22 +88,27 @@ def test_deactivated_user_cannot_login():
     assert r.status_code == 403
 
 
-def test_email_and_phone_verification_with_otp(db):
+def test_register_without_email():
+    c = new_client()
+    r = _register(c, email="")
+    assert r.status_code == 201 and r.json()["user"]["email"] is None
+    assert _register(new_client(), email=None).status_code == 201  # several accounts may omit e-mail
+    c2 = new_client()
+    phone = r.json()["user"]["phone"]
+    assert c2.post("/api/auth/login", json={"identifier": phone, "password": PASSWORD}).status_code == 200
+
+
+def test_phone_verification_with_otp_and_no_email_code(db):
     c = new_client()
     _register(c, email="otp@example.org")
     from tests.test_notifications import run_worker  # worker is not auto-running in tests
     run_worker()
     messages = _outbox()
-    email_msg = next(m for m in messages if m["channel"] == "EMAIL" and m["to"] == "otp@example.org"
-                     and "verification code" in m["body"])
+    assert not any(m["channel"] == "EMAIL" and m["to"] == "otp@example.org" and "verification code" in m["body"]
+                   for m in messages)
     sms_msg = next(m for m in messages if m["channel"] == "SMS" and "verification code" in m["body"])
     import re
-    email_code = re.search(r"\b(\d{6})\b", email_msg["body"]).group(1)
-    sms_code = re.search(r"\b(\d{6})\b", sms_msg["body"]).group(1)
-
-    assert c.post("/api/auth/verify-email", json={"code": "000000" if email_code != "000000" else "111111"}).status_code == 400
-    r = c.post("/api/auth/verify-email", json={"code": email_code})
-    assert r.status_code == 200 and r.json()["user"]["email_verified"] is True
+    sms_code = re.search(r"(\d{6})", sms_msg["body"]).group(1)
     r = c.post("/api/auth/verify-phone", json={"code": sms_code})
     assert r.status_code == 200 and r.json()["user"]["phone_verified"] is True
 
@@ -112,9 +117,9 @@ def test_otp_locks_after_max_attempts(db):
     c = new_client()
     _register(c, email="lock@example.org")
     user = db.scalar(select(User).where(User.email == "lock@example.org"))
-    otp = db.scalar(select(OtpCode).where(OtpCode.user_id == user.id, OtpCode.purpose == OtpPurpose.EMAIL_VERIFY))
+    otp = db.scalar(select(OtpCode).where(OtpCode.user_id == user.id, OtpCode.purpose == OtpPurpose.PHONE_VERIFY))
     for _ in range(5):
-        assert c.post("/api/auth/verify-email", json={"code": "999999"}).status_code == 400
+        assert c.post("/api/auth/verify-phone", json={"code": "999999"}).status_code == 400
     db.expire_all()
     otp = db.get(OtpCode, otp.id)
     assert otp.attempts >= 5

@@ -178,8 +178,8 @@ function EditableApplication({ app, onChange }: { app: Application; onChange: (a
       setMessage({ tone: "error", text: `Please upload: ${missingDocs.map((d) => DOC_LABEL[d.type].toLowerCase()).join("; ")}.` });
       return;
     }
-    if (!me?.user.email_verified || !me?.user.phone_verified) {
-      setMessage({ tone: "error", text: "Verify your email address and mobile number from the dashboard before submitting." });
+    if (!me?.user.phone_verified) {
+      setMessage({ tone: "error", text: "Verify your mobile number from the dashboard before submitting." });
       return;
     }
     setMessage(null);
@@ -222,10 +222,10 @@ function EditableApplication({ app, onChange }: { app: Application; onChange: (a
           <Alert tone="warning" title="The office has asked for these corrections">{app.correction_notes}</Alert>
         </div>
       )}
-      {(!me?.user.email_verified || !me?.user.phone_verified) && (
+      {!me?.user.phone_verified && (
         <div className="mb-6">
-          <Alert tone="warning" title="Verify your contact details" action={<Link to="/dashboard" className="text-sm font-medium underline">Verify now</Link>}>
-            You can fill in the form now, but you need to verify your email address and mobile number before submitting.
+          <Alert tone="warning" title="Verify your mobile number" action={<Link to="/dashboard" className="text-sm font-medium underline">Verify now</Link>}>
+            You can fill in the form now, but you need to verify your mobile number before submitting.
           </Alert>
         </div>
       )}

@@ -14,7 +14,7 @@ export type DocumentType =
 export interface User {
   id: number;
   full_name: string;
-  email: string;
+  email: string | null;
   phone: string;
   role: Role;
   is_active: boolean;
@@ -128,7 +128,7 @@ export interface AdminApplication extends Application {
   aadhaar_number: string | null;
   applicant_user_id: number;
   applicant_account_name: string;
-  applicant_account_email: string;
+  applicant_account_email: string | null;
   applicant_account_phone: string;
   reviewed_by_name: string | null;
   introducer_check: IntroducerCheck;

@@ -72,7 +72,7 @@ export function LoginPage() {
 // --- Register ----------------------------------------------------------------------
 const registerSchema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(150),
-  email: z.string().trim().email("Enter a valid email address"),
+  email: z.string().trim().refine((v) => v === "" || z.string().email().safeParse(v).success, "Enter a valid email address"),
   phone: phoneSchema,
   password: passwordSchema,
   confirm: z.string(),
@@ -88,7 +88,7 @@ export function RegisterPage() {
   const onSubmit = handleSubmit(async ({ confirm: _c, ...values }) => {
     setError(null);
     try {
-      await registerAccount(values);
+      await registerAccount({ ...values, email: values.email || null });
       navigate("/dashboard", { replace: true });
     } catch (e) {
       const info = parseApiError(e, "Could not create the account.");
@@ -106,7 +106,8 @@ export function RegisterPage() {
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         {error && <Alert tone="error">{error}</Alert>}
         <TextField label="Full name" autoComplete="name" required error={errors.full_name?.message} {...register("full_name")} />
-        <TextField label="Email address" type="email" autoComplete="email" required error={errors.email?.message} {...register("email")} />
+        <TextField label="Email address" type="email" autoComplete="email" hint="Optional. Needed only to reset your password by email"
+          error={errors.email?.message} {...register("email")} />
         <TextField label="Mobile number" type="tel" autoComplete="tel" inputMode="tel" required hint="We'll send a verification code by SMS"
           error={errors.phone?.message} {...register("phone")} />
         <TextField label="Password" type="password" autoComplete="new-password" required hint="At least 10 characters, with a letter and a number"

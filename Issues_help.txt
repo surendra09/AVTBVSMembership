@@ -1,0 +1,498 @@
+ABVT MEMBERSHIP RUNNING Locally
+
+How to run local this application and provide me steps
+12:49 PM
+Here are the steps to run this app locally on your machine. It's already set up from our earlier work (SQLite database, seeded data), so I'll give you both the everyday run steps and the from-scratch steps in case you set it up on a fresh machine.
+
+Everyday run (already set up)
+You need two terminals — one for the backend API, one for the frontend.
+
+Terminal 1 — Backend (FastAPI on port 8000):
+
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership\backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+Terminal 2 — Frontend (Vite on port 5173):
+
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership\frontend
+npm run dev
+Then open http://localhost:5173.
+
+API docs (Swagger): http://localhost:8000/docs
+Leave both terminals running; both hot-reload on code changes (frontend instantly; backend only if you add --reload to the uvicorn command).
+Login credentials (seeded demo users)
+Log in with email + password (<handle>1234):
+
+Email	Password	Role
+arjun@avtbvs.test	arjun1234	Super Admin
+priya@avtbvs.test	priya1234	Admin
+deepak@avtbvs.test	deepak1234	User
+(10 users total — full list from earlier. Email/phone verification code in the dashboard is 123456.)
+
+From scratch (fresh machine / reset)
+Prerequisites: Node.js 20+, Python 3.11+ (both already installed here).
+
+Backend:
+
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership\backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+# .env is already present (points to SQLite). Then seed the demo data:
+.\.venv\Scripts\python.exe seed_demo.py
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
+Frontend:
+
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership\frontend
+npm install
+npm run dev
+Useful notes
+Reset the database: delete backend\avtbvs.db, then re-run seed_demo.py.
+"Port already in use": something's already running on that port. Find and stop it:
+
+Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+Emails/SMS aren't sent in dev — they (including OTP codes) are written to backend\storage\outbox.log. The dashboard verification code is simply 123456.
+This is a demo setup using SQLite and dev keys. The original project is built for MySQL; the README's "Running locally" section covers that path if you ever want to switch.
+Want me to just start both servers for you now?
+
+
+
+Question 
+
+need to push this code to remote repostiory  and provide me step by step flow
+
+
+You asked for steps only, so I haven't run anything. Run these in PowerShell, one block at a time.
+
+Your pasted commands need four changes for this project:
+
+git add . instead of git add README.md. Your version would push only the README.
+Exclude the local database first. backend/avtbvs.db holds the demo users and their password hashes, and your .gitignore doesn't cover it yet.
+Set a git name and email. None is set on this machine, so the commit would fail without it.
+The GitHub repo must be empty. If you created it with a README, the push is rejected. There's a fix under "If something goes wrong".
+Step 1: Go to the project folder
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership
+Step 2: Exclude the database and a build cache file
+
+Add-Content .gitignore "`n*.db`nfrontend/tsconfig.tsbuildinfo"
+Step 3: Create the repo and set your name and email
+
+git init
+git config user.name "surendra09"
+git config user.email "surendra09@users.noreply.github.com"
+The noreply address is GitHub's private email form, so your real address doesn't appear in the commit history.
+
+Step 4: Stage everything and check nothing secret is included
+
+git add .
+git status
+git ls-files | Select-String -Pattern "\.env$|\.db$|outbox|node_modules|\.venv"
+The last command should print only .env.example and backend/.env.example. If it lists backend/.env, avtbvs.db, node_modules or .venv, stop and tell me.
+
+Step 5: Commit
+
+git commit -m "Initial commit: AVTBVS Membership app"
+Step 6: Connect to GitHub and push
+
+git branch -M main
+git remote add origin https://github.com/surendra09/AVTBVSMembership.git
+git push -u origin main
+A browser window will ask you to sign in to GitHub. Approve it and the push finishes.
+
+Step 7: Check it worked
+Open https://github.com/surendra09/AVTBVSMembership. You should see backend/, frontend/, docs/ and README.md. You should not see backend/.env, avtbvs.db, node_modules or .venv.
+
+If something goes wrong
+Error	Fix
+rejected ... (fetch first)	The GitHub repo already has files. Run git pull origin main --allow-unrelated-histories, then git push -u origin main.
+remote origin already exists	git remote set-url origin https://github.com/surendra09/AVTBVSMembership.git
+Authentication failed	Sign in through the browser window, or use a Personal Access Token as the password (GitHub → Settings → Developer settings → Tokens).
+
+
+Question
+
+provide the steps and free server  hosting
+
+Free hosting has changed a lot this year, so I checked current limits before recommending anything. Two findings matter for this app:
+
+Aiven's free MySQL is closed to new sign-ups (since 6 Nov 2026) and will be shut down on 21 Dec 2026, so it's not an option.
+Render's free tier deletes local files whenever the service restarts or sleeps. That would lose uploaded photos, ID documents and any SQLite database.
+My recommendation
+Option A: Oracle Cloud Always Free VM (recommended)	Option B: Render + Vercel + TiDB
+What runs	The whole app on one free virtual server, using the project's existing docker-compose.yml (MySQL, API, worker, Nginx)	Backend on Render, frontend on Vercel, database on TiDB Cloud
+Data and uploads	Kept permanently	Database kept; uploaded photos and documents lost on every restart
+Speed	Always on	Sleeps after 15 min idle; first visit after that takes about 1 min
+Setup effort	Medium (Linux server)	Easier
+Good for	Real use by the Sabha	Quick demo only
+Option A: Oracle Cloud Always Free (step by step)
+1. Create the server
+Sign up at cloud.oracle.com/free. A card is needed for identity checks; Always Free resources aren't charged.
+Create a Compute Instance:
+Image: Ubuntu 24.04
+Shape: VM.Standard.A1.Flex (Ampere), 2 OCPU and 12 GB RAM, which is the reduced free allowance reported for 2026.
+If you get "Out of capacity", try another availability domain or try later. As a last resort use VM.Standard.E2.1.Micro, though 1 GB RAM is tight for MySQL.
+Download the SSH key it offers.
+In the instance's Virtual Cloud Network → Security List, add ingress rules for TCP ports 80 and 443 from 0.0.0.0/0.
+2. Get a free domain name
+HTTPS is required for the login cookies (COOKIE_SECURE=true), and HTTPS needs a domain. Use a free subdomain from duckdns.org, for example avtbvs.duckdns.org, and point it to the server's public IP.
+
+3. Connect and install Docker
+From PowerShell on your PC:
+
+
+ssh -i path\to\key.key ubuntu@<SERVER_PUBLIC_IP>
+Then on the server:
+
+
+sudo apt update && sudo apt -y upgrade
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER && newgrp docker
+# Oracle's Ubuntu image blocks web ports by default; open them:
+sudo iptables -I INPUT 6 -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -p tcp --dport 443 -j ACCEPT
+sudo apt -y install iptables-persistent && sudo netfilter-persistent save
+4. Get the code
+
+git clone https://github.com/surendra09/AVTBVSMembership.git
+cd AVTBVSMembership
+cp .env.example .env
+5. Fill in .env (nano .env)
+Generate the three secrets:
+
+
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"   # run twice: SECRET_KEY, DATA_HASH_KEY
+docker run --rm python:3.12-slim sh -c "pip -q install cryptography && python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"   # DATA_ENCRYPTION_KEY
+Then set these values:
+
+
+PUBLIC_APP_URL=https://avtbvs.duckdns.org
+CORS_ORIGINS=https://avtbvs.duckdns.org
+MYSQL_PASSWORD=<strong password>
+MYSQL_ROOT_PASSWORD=<different strong password>
+SECRET_KEY=...   DATA_ENCRYPTION_KEY=...   DATA_HASH_KEY=...
+COOKIE_SECURE=true
+6. Start the app
+
+docker compose up -d --build
+docker compose exec api alembic upgrade head
+docker compose exec api python -m app.cli init-sequences
+docker compose exec api python -m app.cli create-super-admin --name "Your Name" --email you@gmail.com --phone 9876543210
+7. Add HTTPS
+The app listens on 127.0.0.1:8080. Put Nginx with a free Let's Encrypt certificate in front of it:
+
+
+sudo apt -y install nginx certbot python3-certbot-nginx
+sudo cp deployment/nginx/https-host.conf.example /etc/nginx/sites-available/avtbvs
+sudo nano /etc/nginx/sites-available/avtbvs        # replace the example domain with yours
+sudo ln -s /etc/nginx/sites-available/avtbvs /etc/nginx/sites-enabled/
+sudo certbot --nginx -d avtbvs.duckdns.org
+sudo nginx -t && sudo systemctl reload nginx
+Open https://avtbvs.duckdns.org.
+
+8. Updating later
+
+cd AVTBVSMembership && git pull && docker compose up -d --build && docker compose exec api alembic upgrade head
+Option B: Free demo (Render + Vercel + TiDB)
+Database: create a free cluster on TiDB Cloud Starter, which is MySQL-compatible. Copy its connection details; TiDB requires TLS on the connection. I haven't tested this app's migrations on TiDB, so expect possible tweaks.
+Backend: on render.com, create a Web Service from your GitHub repo:
+Runtime: Docker, Dockerfile path: deployment/docker/backend.Dockerfile
+Set environment variables: the .env values from Option A, plus DATABASE_URL for TiDB.
+Frontend: on vercel.com, import the repo:
+Root directory: frontend, build command: npm run build, output folder: dist
+Add a vercel.json that forwards /api/* to your Render URL. The site and API must look like one website to the browser, or the login cookies won't work.
+Accept the limits: the service sleeps when idle and loses uploaded files on restart.
+Before real members use it
+Email codes: with ENVIRONMENT=production, the 123456 shortcut is switched off and real codes must be sent. Gmail SMTP with an App Password is free for email.
+SMS codes: MSG91 or Twilio are paid. Without one, mobile verification can't complete. Either budget for it or ask me to make phone verification optional.
+Demo data: don't run seed_demo.py on the live server. Create the real Super Admin with the CLI as in step 6.
+Backups: the repo includes deployment/scripts/backup.sh. Schedule it with cron.
+If you tell me which option you're going with, I can prepare the files it needs, such as vercel.json for Option B or a filled-in Nginx config for your domain for Option A.
+
+Sources:
+
+Oracle — Always Free Resources
+InfoQ — Oracle Cloud free tier limits (2026)
+Oracle Cloud Free Tier
+Render — Deploy for Free
+Render — Persistent Disks
+Aiven — Free MySQL retired
+Aiven — MySQL free tier migration options
+Bytebase — MySQL hosting options 2026
+
+
+Question
+
+Create it with option B and provide credential for future refernces
+
+I've prepared everything for Option B that can be done from your machine. Creating the TiDB, Render and Vercel accounts and services needs your own sign-in, so those steps are below for you to follow, about 20–30 minutes.
+
+What I created
+render.yaml — tells Render how to run the backend: free plan, Singapore region, a health check, and demo mode. Secrets aren't stored in the file; Render asks you for them.
+frontend/vercel.json — routes /api/... requests from the Vercel site to Render, so logins work. It also makes page refreshes work on every route.
+.gitignore — now excludes *.db files.
+Credentials file: c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\AVTBVS-DEPLOYMENT-CREDENTIALS.txt
+It holds freshly generated app secrets and a strong Super Admin password, plus blanks to fill in for your TiDB, Render and Vercel details.
+It's saved one folder above the repo, so it can't be committed.
+OneDrive will sync it to the cloud; move it if you don't want that.
+Back up DATA_ENCRYPTION_KEY. Without it, stored Aadhaar numbers can never be decrypted.
+The frontend production build, which Vercel will run, passes.
+
+Your local demo database is already on GitHub. backend/avtbvs.db went up in your first push. Step 1 removes it from the repo, but it stays in the commit history. It only holds demo users, so that's low risk.
+
+Step 1: Push the new files
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership
+git rm --cached backend/avtbvs.db
+git add .gitignore render.yaml frontend/vercel.json
+git commit -m "Add Render + Vercel deployment config; stop tracking local SQLite db"
+git push
+Step 2: Database (TiDB Cloud)
+Go to tidbcloud.com and sign in with GitHub.
+Create a Starter (free) cluster named avtbvs, region AWS Singapore.
+Open SQL Editor and run CREATE DATABASE avtbvs;
+Click Connect and generate a password. Copy the host, user and password into section 3 of the credentials file.
+If the console shows an IP access list, allow all IPs (0.0.0.0/0), because Render's outgoing IPs change.
+Step 3: Backend (Render)
+Go to dashboard.render.com, sign in with GitHub, then New → Blueprint and choose AVTBVSMembership.
+Render reads render.yaml and asks for 6 values. Copy them from section 4 of the credentials file. For DATABASE_URL, fill your TiDB user, password and host into the template.
+Click Apply. The first build takes about 5–10 minutes, and database tables are created automatically on start-up.
+Check it's running: open https://avtbvs-api.onrender.com/api/health. It should show {"status":"ok"}.
+If Render gave a different URL, replace avtbvs-api.onrender.com in frontend/vercel.json with it, then commit and push.
+Step 4: Frontend (Vercel)
+Go to vercel.com, sign in with GitHub, then Add New → Project and import AVTBVSMembership.
+Set Root Directory to frontend. Vercel detects Vite and fills in the build settings.
+Click Deploy.
+If your site URL isn't avtbvs-membership.vercel.app, update PUBLIC_APP_URL and CORS_ORIGINS in Render → Environment and save.
+Step 5: Create the Super Admin
+Render's free plan has no server console, so you run this from your PC. Copy the ready-made commands from section 5 of the credentials file, then fill in your email in section 2.
+
+Step 6: Test it
+Open your Vercel URL and check the home page, Beri Chetty page and directory load.
+Log in as the Super Admin.
+Register a test user, verify with 123456, and submit an application.
+Step 7 (optional): Keep the backend awake
+Add a free monitor at uptimerobot.com that checks https://avtbvs-api.onrender.com/api/health every 10 minutes.
+
+Limits of this free setup
+Uploaded photos and ID documents are deleted whenever Render restarts or redeploys. Fine for a demo, not for real members.
+Demo mode: no emails or SMS are sent, and 123456 verifies anyone.
+Sleeping: without the monitor, the first visit after 15 idle minutes takes about a minute.
+Untested: I couldn't run this app against TiDB from here. If tables fail to create on first deploy, send me the Render log and I'll fix it.
+
+
+Question
+
+https://tidbcloud.com/lakes?orgId=1372813089209392186  do the step2 action and provide the procedure
+
+I can't do this step for you. That link opens your private TiDB Cloud account, which needs your sign-in, and this session has no browser control. Here's the procedure to do it yourself; it takes about 5 minutes. Button names may differ slightly in the current TiDB console.
+
+Step 2: Set up the TiDB database
+2.1 Create the free cluster
+Open your link (https://tidbcloud.com/lakes?orgId=…) and sign in.
+
+In the left menu, go to My TiDB (it may be called Clusters).
+
+Click Create Cluster (or Create Instance) and choose:
+
+Setting	Value
+Plan	Starter (free)
+Cloud provider	AWS
+Region	Asia Pacific (Singapore), ap-southeast-1, the same region as Render
+Name	avtbvs
+Spending limit	leave at 0, so it stays free
+Click Create. It's ready in under a minute.
+
+2.2 Get the connection details
+Click the cluster name avtbvs, then Connect in the top-right corner.
+In the dialog, set:
+Connection type: Public
+Connect with: SQLAlchemy (or General)
+Operating system: Debian / Ubuntu. Render runs Linux, so this gives the right certificate path, /etc/ssl/certs/ca-certificates.crt.
+Click Generate Password and copy it immediately, because it's only shown once.
+Write these into section 3 of c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\AVTBVS-DEPLOYMENT-CREDENTIALS.txt:
+Host, for example gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+Port: 4000
+User, for example 3xYz….root, including the prefix before .root
+Password
+If you see an IP Access List or Firewall setting, allow all IPs (0.0.0.0/0). Render's outgoing addresses change, and connections are still encrypted and need the password.
+2.3 Create the avtbvs database
+In the cluster's left menu, open SQL Editor (or Chat2Query).
+Run:
+
+CREATE DATABASE avtbvs;
+SHOW DATABASES;
+avtbvs should appear in the list.
+2.4 Build your DATABASE_URL
+Fill in your values, and save the result in section 4 of the credentials file. Render needs it in Step 3.
+
+
+mysql+pymysql://<USER>:<PASSWORD>@<HOST>:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+If the password contains @ : / ? # & %, replace those characters with their codes: @→%40, :→%3A, /→%2F, ?→%3F, #→%23, &→%26, %→%25.
+
+2.5 Test it from your PC and create the tables (recommended)
+This checks the connection works and creates all tables now, so any TiDB problem shows up before Render. On Windows the certificate path is different, so this version uses the one installed with the backend:
+
+
+cd c:\Users\Hp\OneDrive\Desktop\avtbvs-membership\avtbvs-membership\backend
+$env:DATABASE_URL = "mysql+pymysql://<USER>:<PASSWORD>@<HOST>:4000/avtbvs?ssl_ca=C:/Users/Hp/OneDrive/Desktop/avtbvs-membership/avtbvs-membership/backend/.venv/Lib/site-packages/certifi/cacert.pem&ssl_verify_cert=true&ssl_verify_identity=true"
+
+# 1) Connection test – should print a TiDB version
+.\.venv\Scripts\python.exe -c "import os,sqlalchemy as sa; print(sa.create_engine(os.environ['DATABASE_URL']).connect().execute(sa.text('select version()')).scalar())"
+
+# 2) Create all tables
+.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\python.exe -m app.cli init-sequences
+
+Remove-Item Env:DATABASE_URL
+What a successful run looks like:
+
+The first command prints something like 8.0.11-TiDB-v8.x….
+alembic upgrade head ends without errors.
+init-sequences prints Created membership sequence 'default'….
+If any command fails, send me the error message, but not your password. Then go on to Step 3 (Render); when Render starts, it will find the tables already created.
+
+Source: Connect to TiDB with SQLAlchemy (PingCAP docs)
+
+
+Question
+Cannot reach the server. Check your connection and try again. in the browser  https://avtbvsmembership.vercel.app/login please fix it
+
+The backend's packages and port settings are correct, so the cause is almost certainly in the Render start-up. The backend runs alembic upgrade head, which creates or updates the database tables, before it starts the web server. If it can't reach TiDB, the server never starts. Render then keeps restarting it, and the website shows "Cannot reach the server."
+
+I can't see your Render logs, which would pinpoint this. Please open Render → avtbvs-api → Logs, copy the last 20–30 lines (red errors especially), and paste them here. Remove any password first.
+
+These are the errors I'd expect and how to fix each:
+
+Error in the Render log	Cause	Fix
+Access denied for user	Wrong TiDB user or password in DATABASE_URL	Re-copy both from TiDB → Connect. The user includes the prefix, e.g. 3xYz….root.
+Unknown database 'avtbvs'	The database wasn't created	In TiDB's SQL Editor, run CREATE DATABASE avtbvs;
+Can't connect to MySQL server / timed out	Wrong host or port, or TiDB's IP access list blocks Render	Use port 4000. In TiDB networking, allow 0.0.0.0/0.
+SSL / certificate verify failed	The ssl_ca path in the URL is wrong	The Render URL must use ssl_ca=/etc/ssl/certs/ca-certificates.crt. The Windows certifi path is only for your PC.
+Could not parse SQLAlchemy URL / invalid literal for int()	The password has @ : / # ? & that weren't URL-encoded	Encode them, e.g. @ → %40.
+Port scan timeout / no open ports detected	Render can't see the app's port	Check PORT = 8000 in Render → Environment.
+To edit DATABASE_URL, go to Render → avtbvs-api → Environment, change the value, and click Save, rebuild and deploy. The correct format is:
+
+
+mysql+pymysql://<USER>:<PASSWORD>@<HOST>:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+The frontend config is already pointing at avtbvs-api.onrender.com, which is the right address. Also set these two values in Render → Environment now, so logins work once the backend is up:
+
+
+PUBLIC_APP_URL = https://avtbvsmembership.vercel.app
+CORS_ORIGINS   = https://avtbvsmembership.vercel.app
+Once you send the log, or the service shows Live, I'll re-test /api/health through the website and check that login works end to end.
+
+
+
+I found the cause. The backend can't start, so Render has nothing to serve, and Vercel returns a 502 error for /api/public/config. What I checked:
+
+The website is fine. Vercel serves it and forwards /api requests to Render.
+Render has no running deploy. Its reply included X-Render-Routing: no-deploy, meaning no version of the backend ever started successfully.
+TiDB rejects the login. I tried a read-only connection using the DATABASE_URL from your credentials file. TiDB answered "Access denied. Please check your user name and password." The backend's first start-up step is alembic upgrade head, which needs the database, so it crashes and every deploy fails.
+The DATABASE_URL line has two mistakes.
+The user avtbvs.root is wrong. TiDB puts a random prefix before .root, something like 2aBcD3eFgH.root, not your cluster name.
+There's a space after @ (...@ gateway01...), which breaks the URL.
+Fix, step by step
+Step 1: Get the real TiDB login
+
+Go to https://tidbcloud.com, open the avtbvs cluster and click Connect.
+Set Connect With to General.
+Copy the HOST and USERNAME exactly. The username looks like xxxxxxxxxxxx.root.
+38wCKCGsiKz6nDp.root
+HOST:gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+
+PORT:4000
+
+USERNAME:38wCKCGsiKz6nDp.root
+
+ HOST:gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+
+PORT:4000
+
+USERNAME:38wCKCGsiKz6nDp.root
+
+PASSWORD:XIGSh2pu7jPL3CJ7
+
+DATABASE:avtbvs
+
+CA:<CA_PATH>
+
+Connection string
+mysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs
+
+
+
+
+If you're not sure of the password, click Generate Password or Reset Password and copy it.
+Step 2: Make sure the avtbvs database exists
+In TiDB, open SQL Editor for the cluster and run:
+
+
+CREATE DATABASE IF NOT EXISTS avtbvs;
+Step 3: Allow Render to connect
+Look for a Networking or IP Access List setting for public connections on the cluster. If there is one, add 0.0.0.0/0. Starter clusters usually allow all addresses by default.
+
+Allow_all_public_connections
+Start IP Address : 255.255.255.255	
+End IP Address : 255.255.255.255
+
+
+
+Step 4: Build the correct DATABASE_URL
+Use the values from step 1, with no spaces anywhere:
+
+mysql://38wCKCGsiKz6nDp.root:<PASSWORD>@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs
+
+mysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs
+
+Node.js / mysql2 / Prisma:
+mysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl={"rejectUnauthorized":true}
+
+Drivers expecting ssl-mode:
+mysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl-mode=VERIFY_IDENTITY
+
+
+mysql+pymysql://USERNAME:PASSWORD@HOST:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+If the password contains any of @ : / ? # & %, URL-encode them (for example @ becomes %40).
+
+Step 5: Update the Render environment
+Go to https://dashboard.render.com, open avtbvs-api, then Environment, and set:Key	Value
+DATABASE_URL	the URL from step 4
+PUBLIC_APP_URL	https://avtbvsmembership.vercel.app
+CORS_ORIGINS	https://avtbvsmembership.vercel.app
+Check that SECRET_KEY, DATA_ENCRYPTION_KEY and DATA_HASH_KEY are also filled in from your credentials file. Then click Save, rebuild and deploy.
+
+
+Your AVTBVSMembership Blueprint is showing a Failed sync status from the surendra09 / AVTBVSMembership (main branch) repository. This happens when Render encounters a syntax error in render.yaml, a missing environment variable (sync: false), or a GitHub permissions issue.  
+ 1.Inspect the Blueprint Sync Logs:1 min.Click directly on AVTBVSMembership on your current screen to open the Blueprint's detail page and locate the Events or Sync Logs tab.
+Verification: You can see the exact red error message explaining why the sync failed (e.g., invalid YAML syntax, missing render.yaml, or unconfigured secret).
+2.Fix the Root Cause in Your Repository or Dashboard:3-5 min.Address the specific error reported in the sync log:YAML / Config Error: Open render.yaml in your GitHub repository (surendra09/AVTBVSMembership), fix any indentation, invalid service type, or duplicate service names, and push the commit to main.Missing Secret (sync: false): If a service failed to create because a secret value wasn't supplied during setup, open the affected service from the Blueprint page, go to Environment, and add the missing variable value.Repo Access Issue: If the log says the repo or render.yaml cannot be found, verify render.yaml is in the root directory of the main branch and check your GitHub app permissions in Render Account Settings.Verification: Your changes are pushed to the main branch on GitHub or saved in the Render dashboard.3.Trigger a Manual Sync:1 min.Return to the AVTBVSMembership Blueprint page in Render and click the Manual Sync button in the top-right corner.Verification: The Blueprint status changes from Failed sync to Syncing, and then turns green (Synced) once all services are updated.
+
+
+
+
+Step 6: Watch the deploy
+Open Render → avtbvs-api → Logs. A good start shows Alembic Running upgrade ... -> 0001 lines, then Listening at: http://0.0.0.0:8000, and the status turns Live. The first build takes about 5–10 minutes.
+
+mysql+pymysql://avtbvs.root:JKccPgsg2C5s3p9H@ gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+
+TiDBCLOUD: mysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs
+
+RENDER: mysql+pymysql://avtbvs.root:JKccPgsg2C5s3p9H@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.cr
+mysql+pymysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.cr
+
+mysql+pymysql://avtbvs.root:JKccPgsg2C5s3p9H@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+
+mysql+pymysql://38wCKCGsiKz6nDp.root:XIGSh2pu7jPL3CJ7@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/avtbvs?ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_verify_cert=true&ssl_verify_identity=true
+
+Step 7: Check that it works
+
+Open https://avtbvs-api.onrender.com/api/health. It should show a short JSON reply.
+Open https://avtbvsmembership.vercel.app/api/public/config. It should show JSON instead of a 502 error.
+Open https://avtbvsmembership.vercel.app/login. The "Cannot reach the server" message should be gone.
+Step 8: Update your credentials file
+Change the TiDB User and the DATABASE_URL line to the correct values. Also change the two Vercel URLs from avtbvs-membership.vercel.app to avtbvsmembership.vercel.app.
+
+Once it's live, tell me and I'll re-test the endpoints. The next step after that is creating the Super Admin, step 5 in your credentials file.

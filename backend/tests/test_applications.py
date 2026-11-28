@@ -80,7 +80,7 @@ def test_unverified_account_cannot_submit():
     app = create_complete_application(c)
     r = c.post(f"/api/applications/{app['id']}/submit")
     errors = r.json()["detail"]["errors"]
-    assert "account_email" in errors and "account_phone" in errors
+    assert "account_phone" in errors and "account_email" not in errors  # e-mail is not verified
 
 
 def test_one_open_application_per_user():

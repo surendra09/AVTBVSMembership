@@ -213,8 +213,7 @@ def validate_submission(db: Session, app: MemberApplication, user: User) -> None
         if doc_type not in have:
             errors[f"document_{doc_type.value}"] = f"{label} must be uploaded"
     if settings.REQUIRE_VERIFIED_CONTACT_FOR_SUBMISSION:
-        if not user.email_verified_at:
-            errors["account_email"] = "Verify your email address before submitting"
+        # E-mail is optional and not verified; only the mobile number must be confirmed.
         if not user.phone_verified_at:
             errors["account_phone"] = "Verify your mobile number before submitting"
     if errors:
